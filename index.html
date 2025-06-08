@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Responsive News Site</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #5f3f9c;
+    }
+
+    header {
+      background-color: #222;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .search-container {
+      background-color: #444;
+      padding: 0.5rem 1rem;
+      text-align: center;
+    }
+
+    .search-container input[type="text"] {
+      width: 100%;
+      max-width: 400px;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      border: none;
+      font-size: 1rem;
+    }
+
+    nav {
+      background-color: #333;
+      padding: 0.5rem 1rem;
+    }
+
+    .menu-icon {
+      display: none;
+      font-size: 1.5rem;
+      color: white;
+      cursor: pointer;
+    }
+
+    #menu-toggle {
+      display: none;
+    }
+
+    .menu {
+      display: flex;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      gap: 1rem;
+    }
+
+    .menu li a {
+      color: white;
+      text-decoration: none;
+      padding: 0.5rem;
+    }
+
+    .menu li a.active {
+      background-color: #007bff;
+      border-radius: 5px;
+    }
+
+    .menu li a:hover {
+      background-color: #444;
+      border-radius: 5px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: auto;
+      padding: 1rem;
+    }
+
+    .tab-content {
+      display: none;
+      background: white;
+      padding: 20px;
+      margin-top: 10px;
+      border-radius: 10px;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .news-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+
+    .card {
+      background-color: white;
+      padding: 1rem;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .card img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 5px;
+    }
+
+    .card h3 {
+      margin: 0.5rem 0;
+    }
+
+    @media (max-width: 768px) {
+      .news-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .menu {
+        display: none;
+        flex-direction: column;
+      }
+
+      #menu-toggle:checked + .menu-icon + .menu {
+        display: flex;
+      }
+
+      .menu-icon {
+        display: block;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>SIASA NATION</h1>
+  </header>
+
+  <div class="search-container">
+    <input type="text" id="search-input" placeholder="Search news..." />
+  </div>
+
+  <nav>
+    <input type="checkbox" id="menu-toggle" />
+    <label for="menu-toggle" class="menu-icon">&#9776;</label>
+    <ul class="menu">
+      <li><a href="#" class="tab-link active" data-tab="home">Home</a></li>
+      <li><a href="#" class="tab-link" data-tab="politics">Politics</a></li>
+      <li><a href="#" class="tab-link" data-tab="trending">Trending in Politics</a></li>
+      <li><a href="#" class="tab-link" data-tab="opinions">Opinions</a></li>
+    </ul>
+  </nav>
+
+  <div class="container">
+    <div id="tab-home" class="tab-content active">
+      <h2>Home</h2>
+      <div class="news-grid" id="home-news"></div>
+    </div>
+
+    <div id="tab-politics" class="tab-content">
+      <h2>Politics</h2>
+      <div class="news-grid" id="politics-news"></div>
+    </div>
+
+    <div id="tab-trending" class="tab-content">
+      <h2>Trending in Politics</h2>
+      <div class="news-grid" id="trending-news"></div>
+    </div>
+
+    <div id="tab-opinions" class="tab-content">
+      <h2>Opinions</h2>
+      <div class="news-grid" id="opinions-news"></div>
+    </div>
+  </div>
+
+  <script>
+    const links = document.querySelectorAll('.tab-link');
+    const tabs = document.querySelectorAll('.tab-content');
+    const searchInput = document.getElementById('search-input');
+
+    // Tab switching
+    links.forEach(link => {
+      link.addEventListener('click', e => {
+        e.preventDefault();
+        const tabId = link.getAttribute('data-tab');
+
+        links.forEach(l => l.classList.remove('active'));
+        tabs.forEach(tab => tab.classList.remove('active'));
+
+        link.classList.add('active');
+        document.getElementById(`tab-${tabId}`).classList.add('active');
+
+        searchInput.value = '';
+        filterNews('');
+      });
+    });
+
+    // Load news data from localStorage or use empty fallback
+    const storedNews = JSON.parse(localStorage.getItem('newsData')) || {
+      home: [],
+      politics: [],
+      trending: [],
+      opinions: []
+    };
+
+    function renderNews(sectionId, articles) {
+      const container = document.getElementById(sectionId);
+      if (!articles || articles.length === 0) {
+        container.innerHTML = `<p style="color: gray;">No news available in this category.</p>`;
+        return;
+      }
+
+      container.innerHTML = articles.map(article => `
+        <div class="card">
+          <img src="${article.image}" alt="News Image">
+          <h3>${article.title}</h3>
+          <p>${article.summary}</p>
+        </div>
+      `).join('');
+    }
+
+    renderNews('home-news', storedNews.home);
+    renderNews('politics-news', storedNews.politics);
+    renderNews('trending-news', storedNews.trending);
+    renderNews('opinions-news', storedNews.opinions);
+
+    function filterNews(query) {
+      query = query.toLowerCase();
+      const activeTab = document.querySelector('.tab-content.active');
+      if (!activeTab) return;
+
+      const cards = activeTab.querySelectorAll('.card');
+      cards.forEach(card => {
+        const title = card.querySelector('h3').textContent.toLowerCase();
+        card.style.display = title.includes(query) ? '' : 'none';
+      });
+    }
+
+    searchInput.addEventListener('input', e => {
+      filterNews(e.target.value);
+    });
+  </script>
+
+  <!-- ✅ Newsdata.io live news fetching -->
+  <script>
+    const apiKey = "pub_7fd76ea64e8241ffac0f1adc4a882602"; // <-- Replace with your real API key
+    const url = `https://newsdata.io/api/1/news?apikey=${apiKey}&country=ke&category=politics&language=en`;
+
+    fetch(url)
+      .then(response => response.json())
+      .then(data => {
+        const container = document.getElementById('home-news');
+        container.innerHTML = '';
+
+        data.results.forEach(article => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML = `
+            <img src="${article.image_url || 'https://via.placeholder.com/400x200'}" alt="News Image">
+            <h3>${article.title}</h3>
+            <p>${article.description || ''}</p>
+            <a href="${article.link}" target="_blank">Read more</a>
+          `;
+          container.appendChild(card);
+        });
+      })
+      .catch(error => {
+        console.error("Error fetching news:", error);
+      });
+  </script>
+</body>
+</html>
